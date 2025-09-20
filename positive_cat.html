@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Positive Cat - Daily Successes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        // Configure Tailwind with Apple-style black and white palette
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#000000',
+                        secondary: '#555555',
+                        light: '#F5F5F7',
+                        border: '#E2E2E7',
+                        error: '#ff3b30'
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            /* Apple-style glass effect */
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.8);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border: 1px solid rgba(200, 200, 200, 0.15);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            }
+            
+            /* Apple-style black gradient */
+            .gradient-bg {
+                background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            }
+            
+            /* Subtle button hover effect */
+            .btn-hover {
+                transition: all 0.2s ease;
+            }
+            
+            .btn-hover:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            }
+            
+            /* Input focus effect matching Apple style */
+            .input-focus {
+                transition: all 0.2s ease;
+            }
+            
+            .input-focus:focus {
+                box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+                outline: none;
+                border-color: #000000;
+            }
+            
+            /* Custom scrollbar matching Apple style */
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 5px;
+            }
+            
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background-color: rgba(0, 0, 0, 0.2);
+                border-radius: 20px;
+            }
+            
+            /* Page container styles */
+            .page {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                overflow-y: auto;
+                transition: transform 0.3s ease;
+            }
+            
+            .page.active {
+                transform: translateX(0);
+            }
+            
+            .page.inactive {
+                transform: translateX(100%);
+            }
+            
+            .page.inactive-left {
+                transform: translateX(-100%);
+            }
+            
+            /* Auth page styles */
+            .auth-container {
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 20px;
+            }
+            
+            /* Notification styles - auto hide after 1.5 seconds */
+            .notification {
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%) translateY(-200%);
+                padding: 12px 20px;
+                border-radius: 10px;
+                background-color: #000;
+                color: #fff;
+                font-size: 14px;
+                transition: transform 0.3s ease;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+            
+            .notification.show {
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .notification.error {
+                background-color: #ff3b30;
+            }
+            
+            /* Modal styles */
+            .modal-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease, visibility 0.3s ease;
+            }
+            
+            .modal-backdrop.show {
+                opacity: 1;
+                visibility: visible;
+            }
+            
+            .modal-content {
+                background-color: #fff;
+                border-radius: 20px;
+                width: 90%;
+                max-width: 500px;
+                max-height: 80vh;
+                overflow-y: auto;
+                padding: 24px;
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+            }
+            
+            .modal-backdrop.show .modal-content {
+                transform: scale(1);
+            }
+            
+            .modal-close {
+                position: absolute;
+                top: 16px;
+                right: 16px;
+                background: none;
+                border: none;
+                font-size: 20px;
+                cursor: pointer;
+                color: #555;
+                transition: color 0.2s ease;
+            }
+            
+            .modal-close:hover {
+                color: #000;
+            }
+
+            /* Settings menu styles */
+            .settings-menu {
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-5px);
+                transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+            }
+            
+            .settings-container.active .settings-menu {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-light min-h-screen font-sans text-primary custom-scrollbar overflow-x-hidden">
+    <!-- Authentication Pages -->
+    <div id="loginPage" class="page active auth-container">
+        <div class="max-w-md mx-auto w-full">
+            <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-semibold text-center mb-8 tracking-tight">
+                Positive Cat
+            </h1>
+            
+            <div class="glass-effect rounded-3xl p-6 shadow-sm mb-4">
+                <h2 class="text-xl font-semibold mb-5 text-center">Welcome Back</h2>
+                
+                <div class="mb-4">
+                    <label for="loginUsername" class="block text-sm font-medium mb-1">Username</label>
+                    <input type="text" id="loginUsername" class="w-full px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Enter your username">
+                </div>
+                
+                <div class="mb-6">
+                    <label for="loginPassword" class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Enter your password">
+                </div>
+                
+                <div id="loginError" class="text-error text-sm mb-4 hidden"></div>
+                
+                <button id="loginBtn" class="w-full py-3 rounded-xl gradient-bg text-white font-medium btn-hover mb-3">
+                    <i class="fa fa-sign-in mr-2"></i>Login
+                </button>
+                
+                <button id="switchToRegisterBtn" class="w-full py-3 rounded-xl border border-primary text-primary font-medium btn-hover">
+                    Create new account
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="registerPage" class="page inactive auth-container">
+        <div class="max-w-md mx-auto w-full">
+            <h1 class="text-[clamp(1.8rem,5vw,2.5rem)] font-semibold text-center mb-8 tracking-tight">
+                Positive Cat
+            </h1>
+            
+            <div class="glass-effect rounded-3xl p-6 shadow-sm mb-4">
+                <h2 class="text-xl font-semibold mb-5 text-center">Create Account</h2>
+                
+                <div class="mb-4">
+                    <label for="registerUsername" class="block text-sm font-medium mb-1">Username</label>
+                    <input type="text" id="registerUsername" class="w-full px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Choose a username">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="registerPassword" class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" id="registerPassword" class="w-full px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Create a password (min. 6 chars)">
+                </div>
+                
+                <div class="mb-6">
+                    <label for="registerConfirmPassword" class="block text-sm font-medium mb-1">Confirm Password</label>
+                    <input type="password" id="registerConfirmPassword" class="w-full px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Confirm your password">
+                </div>
+                
+                <div id="registerError" class="text-error text-sm mb-4 hidden"></div>
+                
+                <button id="registerBtn" class="w-full py-3 rounded-xl gradient-bg text-white font-medium btn-hover mb-3">
+                    <i class="fa fa-user-plus mr-2"></i>Register
+                </button>
+                
+                <button id="switchToLoginBtn" class="w-full py-3 rounded-xl border border-primary text-primary font-medium btn-hover">
+                    Already have an account? Login
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main application container -->
+    <div id="appContainer" class="min-h-screen flex flex-col relative page inactive">
+        <!-- Header navigation -->
+        <header class="glass-effect py-4 px-6 sticky top-0 z-50 shadow-sm flex justify-between items-center">
+            <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-semibold tracking-tight">
+                Positive Cat
+            </h1>
+            <div class="flex items-center">
+                <span id="currentDate" class="text-sm mr-3 text-secondary"></span>
+                <span id="currentUser" class="text-sm mr-3"></span>
+                <div class="relative settings-container" id="settingsContainer">
+                    <button id="settingsBtn" class="text-sm text-secondary hover:text-primary transition flex items-center">
+                        <i class="fa fa-cog mr-1"></i>
+                    </button>
+                    <div class="settings-menu absolute right-0 mt-2 w-48 glass-effect rounded-xl shadow-lg py-2 z-50">
+                        <button id="logoutBtn" class="w-full text-left px-4 py-2 text-sm hover:bg-light transition">
+                            <i class="fa fa-sign-out mr-2"></i>Logout
+                        </button>
+                        <button id="deleteAccountBtn" class="w-full text-left px-4 py-2 text-sm text-error hover:bg-light transition">
+                            <i class="fa fa-trash mr-2"></i>Delete Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main content area -->
+        <main class="flex-1 relative overflow-hidden">
+            <!-- Page 1: Today - Successes and Universe Letter -->
+            <div id="todayPage" class="page active p-6 custom-scrollbar">
+                <div class="glass-effect rounded-3xl p-6 mb-6 shadow-sm">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="text-xl font-semibold tracking-tight">Today's Successes</h2>
+                        <span id="todayDisplayDate" class="text-sm text-secondary"></span>
+                    </div>
+                    <p class="text-secondary mb-5 text-sm">Record 5 small wins from today to nurture gratitude</p>
+                    
+                    <div id="successItemsContainer" class="space-y-3 mb-5">
+                        <div class="flex items-center">
+                            <span class="w-6 h-6 rounded-full gradient-bg text-white flex items-center justify-center text-sm mr-2">1</span>
+                            <input type="text" class="success-item flex-1 px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="First successful moment...">
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-6 h-6 rounded-full gradient-bg text-white flex items-center justify-center text-sm mr-2">2</span>
+                            <input type="text" class="success-item flex-1 px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Second successful moment...">
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-6 h-6 rounded-full gradient-bg text-white flex items-center justify-center text-sm mr-2">3</span>
+                            <input type="text" class="success-item flex-1 px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Third successful moment...">
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-6 h-6 rounded-full gradient-bg text-white flex items-center justify-center text-sm mr-2">4</span>
+                            <input type="text" class="success-item flex-1 px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Fourth successful moment...">
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-6 h-6 rounded-full gradient-bg text-white flex items-center justify-center text-sm mr-2">5</span>
+                            <input type="text" class="success-item flex-1 px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="Fifth successful moment...">
+                        </div>
+                        <button id="addMoreItemBtn" class="w-full py-2 rounded-xl border border-dashed border-primary text-primary font-medium text-sm btn-hover">
+                            <i class="fa fa-plus mr-1"></i>Add More
+                        </button>
+                    </div>
+                    
+                    <!-- Save button starts hidden -->
+                    <button id="universeLetterBtn" class="w-full py-3 rounded-xl border border-primary text-primary font-medium btn-hover mb-3" disabled>
+                        <i class="fa fa-envelope-o mr-2"></i>Get Universe Letter
+                    </button>
+                    <button id="saveSummaryBtn" class="w-full py-3 rounded-xl gradient-bg text-white font-medium btn-hover hidden">
+                        <i class="fa fa-save mr-2"></i>Save Entry
+                    </button>
+                </div>
+                
+                <!-- Universe Letter -->
+                <div id="universeLetterContainer" class="glass-effect rounded-3xl p-6 mb-6 shadow-sm hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Letter from the Universe</h3>
+                        <span id="letterDate" class="text-sm text-secondary"></span>
+                    </div>
+                    <div id="letterContent" class="min-h-[150px] leading-relaxed mb-4 text-secondary">
+                        <!-- Letter content will appear here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Page 2: Memories - View History -->
+            <div id="memoriesPage" class="page inactive p-6 custom-scrollbar">
+                <div class="glass-effect rounded-3xl p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Past Memories</h3>
+                    <div id="historyContainer" class="space-y-3">
+                        <!-- History records will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Bottom navigation -->
+        <footer class="glass-effect py-3 px-6 sticky bottom-0 z-50 shadow-sm border-t border-border">
+            <div class="flex justify-around">
+                <button id="todayBtn" class="flex flex-col items-center text-primary">
+                    <i class="fa fa-pencil text-xl mb-1"></i>
+                    <span class="text-xs">Today</span>
+                </button>
+                <button id="memoriesBtn" class="flex flex-col items-center text-secondary">
+                    <i class="fa fa-book text-xl mb-1"></i>
+                    <span class="text-xs">Memories</span>
+                </button>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Confirmation Modal for Account Deletion -->
+    <div id="deleteAccountModal" class="modal-backdrop">
+        <div class="modal-content relative">
+            <button id="deleteModalCloseBtn" class="modal-close">
+                <i class="fa fa-times"></i>
+            </button>
+            <h3 class="text-lg font-semibold mb-3 text-error">Delete Account</h3>
+            <p class="text-secondary mb-5">Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.</p>
+            
+            <div class="flex space-x-3">
+                <button id="cancelDeleteBtn" class="flex-1 py-2 rounded-xl border border-primary text-primary font-medium btn-hover">
+                    Cancel
+                </button>
+                <button id="confirmDeleteBtn" class="flex-1 py-2 rounded-xl bg-error text-white font-medium btn-hover">
+                    Confirm Delete
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Memory Detail Modal -->
+    <div id="memoryModal" class="modal-backdrop">
+        <div class="modal-content relative">
+            <button id="modalCloseBtn" class="modal-close">
+                <i class="fa fa-times"></i>
+            </button>
+            <h3 class="text-lg font-semibold mb-3" id="modalDate"></h3>
+            
+            <div class="mb-5">
+                <h4 class="font-medium mb-2">Successful Moments:</h4>
+                <ul id="modalSuccessItems" class="list-disc list-inside space-y-1 text-secondary pl-2"></ul>
+            </div>
+            
+            <div class="mb-5">
+                <h4 class="font-medium mb-2">Letter from the Universe:</h4>
+                <div id="modalLetterContent" class="text-secondary leading-relaxed">
+                    <!-- Letter content will appear here -->
+                </div>
+            </div>
+            
+            <button id="editMemoryBtn" class="w-full py-2 rounded-xl border border-primary text-primary font-medium btn-hover">
+                <i class="fa fa-pencil mr-2"></i>Edit
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global state management with date system
+        const state = {
+            successItems: [],
+            history: [],
+            currentLetter: null, // Current generated letter content
+            isLoggedIn: false,
+            userId: null, // Logged in user ID
+            username: null, // Logged in username
+            currentPage: 'today', // 'today' or 'memories'
+            editingRecordId: null, // Date of record being edited
+            currentDate: new Date() // Current date object using local time
+        };
+
+        // DOM elements
+        const elements = {
+            // Auth elements
+            loginPage: document.getElementById('loginPage'),
+            registerPage: document.getElementById('registerPage'),
+            loginUsername: document.getElementById('loginUsername'),
+            loginPassword: document.getElementById('loginPassword'),
+            loginBtn: document.getElementById('loginBtn'),
+            loginError: document.getElementById('loginError'),
+            registerUsername: document.getElementById('registerUsername'),
+            registerPassword: document.getElementById('registerPassword'),
+            registerConfirmPassword: document.getElementById('registerConfirmPassword'),
+            registerBtn: document.getElementById('registerBtn'),
+            registerError: document.getElementById('registerError'),
+            switchToRegisterBtn: document.getElementById('switchToRegisterBtn'),
+            switchToLoginBtn: document.getElementById('switchToLoginBtn'),
+            currentUser: document.getElementById('currentUser'),
+            currentDate: document.getElementById('currentDate'),
+            logoutBtn: document.getElementById('logoutBtn'),
+            deleteAccountBtn: document.getElementById('deleteAccountBtn'),
+            settingsBtn: document.getElementById('settingsBtn'),
+            settingsContainer: document.getElementById('settingsContainer'),
+            
+            // Account deletion modal
+            deleteAccountModal: document.getElementById('deleteAccountModal'),
+            deleteModalCloseBtn: document.getElementById('deleteModalCloseBtn'),
+            cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
+            confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
+            
+            // App container
+            appContainer: document.getElementById('appContainer'),
+            
+            // Pages
+            todayPage: document.getElementById('todayPage'),
+            memoriesPage: document.getElementById('memoriesPage'),
+            
+            // Navigation buttons
+            todayBtn: document.getElementById('todayBtn'),
+            memoriesBtn: document.getElementById('memoriesBtn'),
+            
+            // Today page elements
+            successItemsContainer: document.getElementById('successItemsContainer'),
+            successItems: document.querySelectorAll('.success-item'),
+            addMoreItemBtn: document.getElementById('addMoreItemBtn'),
+            saveSummaryBtn: document.getElementById('saveSummaryBtn'),
+            universeLetterBtn: document.getElementById('universeLetterBtn'),
+            universeLetterContainer: document.getElementById('universeLetterContainer'),
+            letterDate: document.getElementById('letterDate'),
+            letterContent: document.getElementById('letterContent'),
+            todayDisplayDate: document.getElementById('todayDisplayDate'),
+            
+            // Memories page elements
+            historyContainer: document.getElementById('historyContainer'),
+            
+            // Notification - auto hides after 1.5 seconds
+            notification: document.getElementById('notification'),
+            
+            // Modal elements
+            memoryModal: document.getElementById('memoryModal'),
+            modalCloseBtn: document.getElementById('modalCloseBtn'),
+            modalDate: document.getElementById('modalDate'),
+            modalSuccessItems: document.getElementById('modalSuccessItems'),
+            modalLetterContent: document.getElementById('modalLetterContent'),
+            editMemoryBtn: document.getElementById('editMemoryBtn')
+        };
+
+        // Initialize application
+        function initApp() {
+            // Bind event listeners
+            bindEventListeners();
+            
+            // Initialize date display with local time
+            updateDateDisplay();
+            
+            // Check if user is already logged in
+            checkLoginStatus();
+        }
+
+        // Update date display throughout the app using local time
+        function updateDateDisplay() {
+            // Format for header - e.g., "Mon, Sep 18, 2023"
+            const headerFormat = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+            elements.currentDate.textContent = state.currentDate.toLocaleDateString('en-US', headerFormat);
+            
+            // Format for today page - e.g., "Monday, September 18, 2023"
+            const todayPageFormat = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
+            elements.todayDisplayDate.textContent = state.currentDate.toLocaleDateString('en-US', todayPageFormat);
+        }
+
+        // Bind all event listeners
+        function bindEventListeners() {
+            // Authentication events
+            elements.loginBtn.addEventListener('click', handleLogin);
+            elements.registerBtn.addEventListener('click', handleRegister);
+            elements.switchToRegisterBtn.addEventListener('click', () => switchAuthPage('register'));
+            elements.switchToLoginBtn.addEventListener('click', () => switchAuthPage('login'));
+            elements.logoutBtn.addEventListener('click', handleLogout);
+            
+            // Settings menu toggle
+            elements.settingsBtn.addEventListener('click', toggleSettingsMenu);
+            
+            // Close settings menu when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!elements.settingsContainer.contains(e.target)) {
+                    closeSettingsMenu();
+                }
+            });
+            
+            // Account deletion events
+            elements.deleteAccountBtn.addEventListener('click', openDeleteAccountModal);
+            elements.deleteModalCloseBtn.addEventListener('click', closeDeleteAccountModal);
+            elements.cancelDeleteBtn.addEventListener('click', closeDeleteAccountModal);
+            elements.confirmDeleteBtn.addEventListener('click', confirmAccountDeletion);
+            elements.deleteAccountModal.addEventListener('click', (e) => {
+                if (e.target === elements.deleteAccountModal) {
+                    closeDeleteAccountModal();
+                }
+            });
+            
+            // Page navigation
+            elements.todayBtn.addEventListener('click', () => navigateToPage('today'));
+            elements.memoriesBtn.addEventListener('click', () => navigateToPage('memories'));
+            
+            // Today page events
+            elements.addMoreItemBtn.addEventListener('click', addMoreSuccessItem);
+            elements.saveSummaryBtn.addEventListener('click', saveSummary);
+            elements.universeLetterBtn.addEventListener('click', requestUniverseLetter);
+            
+            // Modal events
+            elements.modalCloseBtn.addEventListener('click', closeMemoryModal);
+            elements.memoryModal.addEventListener('click', (e) => {
+                if (e.target === elements.memoryModal) {
+                    closeMemoryModal();
+                }
+            });
+            elements.editMemoryBtn.addEventListener('click', editMemory);
+            
+            // Listen for input changes to enable/disable buttons
+            document.addEventListener('input', (e) => {
+                if (e.target.classList.contains('success-item')) {
+                    checkSuccessItemsComplete();
+                }
+            });
+            
+            // Listen for delete button clicks
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-item-btn') || e.target.parentElement.classList.contains('delete-item-btn')) {
+                    const deleteBtn = e.target.classList.contains('delete-item-btn') ? e.target : e.target.parentElement;
+                    const itemElement = deleteBtn.closest('.flex');
+                    if (itemElement) {
+                        deleteSuccessItem(itemElement);
+                    }
+                }
+            });
+            
+            // Update date display daily using local time
+            setInterval(() => {
+                const now = new Date();
+                if (now.toDateString() !== state.currentDate.toDateString()) {
+                    state.currentDate = now;
+                    updateDateDisplay();
+                    checkAndClearToday();
+                }
+            }, 86400000); // Check once per day (24 * 60 * 60 * 1000 ms)
+        }
+
+        // Toggle settings menu visibility
+        function toggleSettingsMenu() {
+            elements.settingsContainer.classList.toggle('active');
+        }
+
+        // Close settings menu
+        function closeSettingsMenu() {
+            elements.settingsContainer.classList.remove('active');
+        }
+
+        // Open account deletion confirmation modal
+        function openDeleteAccountModal() {
+            closeSettingsMenu(); // Close settings menu when opening modal
+            elements.deleteAccountModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close account deletion confirmation modal
+        function closeDeleteAccountModal() {
+            elements.deleteAccountModal.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        // Confirm and process account deletion
+        function confirmAccountDeletion() {
+            if (!state.userId) return;
+            
+            // Get all users from storage
+            let users = JSON.parse(localStorage.getItem('positiveCatUsers') || '[]');
+            
+            // Remove user from users list
+            users = users.filter(user => user.id !== state.userId);
+            localStorage.setItem('positiveCatUsers', JSON.stringify(users));
+            
+            // Remove user data
+            localStorage.removeItem(`positiveCatData_${state.userId}`);
+            
+            // Remove current user session
+            localStorage.removeItem('positiveCatCurrentUser');
+            
+            // Reset state
+            state.isLoggedIn = false;
+            state.userId = null;
+            state.username = null;
+            state.history = [];
+            
+            // Close modal
+            closeDeleteAccountModal();
+            
+            // Show login page
+            showAuthPage('login');
+            
+            showNotification('Your account has been deleted successfully');
+        }
+
+        // Check if user is logged in
+        function checkLoginStatus() {
+            const savedUser = localStorage.getItem('positiveCatCurrentUser');
+            if (savedUser) {
+                const user = JSON.parse(savedUser);
+                state.isLoggedIn = true;
+                state.userId = user.id;
+                state.username = user.username;
+                loadUserData();
+                showApp();
+            } else {
+                showAuthPage('login');
+            }
+        }
+
+        // Switch between auth pages
+        function switchAuthPage(page) {
+            if (page === 'register') {
+                elements.loginPage.classList.remove('active');
+                elements.loginPage.classList.add('inactive');
+                elements.registerPage.classList.remove('inactive');
+                elements.registerPage.classList.add('active');
+                clearAuthErrors();
+            } else {
+                elements.registerPage.classList.remove('active');
+                elements.registerPage.classList.add('inactive');
+                elements.loginPage.classList.remove('inactive');
+                elements.loginPage.classList.add('active');
+                clearAuthErrors();
+            }
+        }
+
+        // Show authentication page
+        function showAuthPage(page = 'login') {
+            elements.appContainer.classList.remove('active');
+            elements.appContainer.classList.add('inactive');
+            
+            if (page === 'register') {
+                elements.registerPage.classList.remove('inactive');
+                elements.registerPage.classList.add('active');
+                elements.loginPage.classList.remove('active');
+                elements.loginPage.classList.add('inactive');
+            } else {
+                elements.loginPage.classList.remove('inactive');
+                elements.loginPage.classList.add('active');
+                elements.registerPage.classList.remove('active');
+                elements.registerPage.classList.add('inactive');
+            }
+        }
+
+        // Show main application after login
+        function showApp() {
+            elements.loginPage.classList.remove('active');
+            elements.loginPage.classList.add('inactive');
+            elements.registerPage.classList.remove('active');
+            elements.registerPage.classList.add('inactive');
+            elements.appContainer.classList.remove('inactive');
+            elements.appContainer.classList.add('active');
+            
+            // Display current user
+            elements.currentUser.textContent = state.username;
+            
+            // Ensure memory page shows current user's data
+            displayHistory();
+            
+            // Initialize app after login
+            checkAndClearToday();
+        }
+
+        // Handle user login
+        function handleLogin() {
+            const username = elements.loginUsername.value.trim();
+            const password = elements.loginPassword.value.trim();
+            
+            clearAuthErrors();
+            
+            // Validate input
+            if (!username || !password) {
+                showAuthError('login', 'Please enter both username and password');
+                return;
+            }
+            
+            // Get all users from storage
+            const users = JSON.parse(localStorage.getItem('positiveCatUsers') || '[]');
+            const user = users.find(u => u.username === username);
+            
+            // Check if user exists and password matches
+            if (!user || !verifyPassword(password, user.passwordHash)) {
+                showAuthError('login', 'Invalid username or password');
+                return;
+            }
+            
+            // Login successful
+            state.isLoggedIn = true;
+            state.userId = user.id;
+            state.username = user.username;
+            
+            // Save current user session
+            localStorage.setItem('positiveCatCurrentUser', JSON.stringify({
+                id: user.id,
+                username: user.username
+            }));
+            
+            // Clear any potentially残留 data
+            state.history = [];
+            elements.historyContainer.innerHTML = '';
+            
+            // Load user data
+            loadUserData();
+            
+            // Show main app
+            showApp();
+            
+            // Clear form
+            elements.loginUsername.value = '';
+            elements.loginPassword.value = '';
+            
+            showNotification(`Welcome back, ${username}!`);
+        }
+
+        // Handle user registration
+        function handleRegister() {
+            const username = elements.registerUsername.value.trim();
+            const password = elements.registerPassword.value.trim();
+            const confirmPassword = elements.registerConfirmPassword.value.trim();
+            
+            clearAuthErrors();
+            
+            // Validate input
+            if (!username || !password || !confirmPassword) {
+                showAuthError('register', 'Please fill in all fields');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAuthError('register', 'Password must be at least 6 characters');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAuthError('register', 'Passwords do not match');
+                return;
+            }
+            
+            // Check if username already exists
+            const users = JSON.parse(localStorage.getItem('positiveCatUsers') || '[]');
+            if (users.some(u => u.username === username)) {
+                showAuthError('register', 'Username already exists');
+                return;
+            }
+            
+            // Create new user
+            const newUser = {
+                id: generateUserId(),
+                username: username,
+                passwordHash: hashPassword(password),
+                createdAt: new Date().toISOString()
+            };
+            
+            // Save user
+            users.push(newUser);
+            localStorage.setItem('positiveCatUsers', JSON.stringify(users));
+            
+            // Create empty data for new user
+            localStorage.setItem(`positiveCatData_${newUser.id}`, JSON.stringify({
+                history: [],
+                lastUpdated: new Date().toISOString()
+            }));
+            
+            // Login the new user
+            state.isLoggedIn = true;
+            state.userId = newUser.id;
+            state.username = newUser.username;
+            
+            // Clear any potentially残留 data
+            state.history = [];
+            elements.historyContainer.innerHTML = '';
+            
+            // Show main app
+            showApp();
+            
+            // Clear form
+            elements.registerUsername.value = '';
+            elements.registerPassword.value = '';
+            elements.registerConfirmPassword.value = '';
+            
+            showNotification(`Account created successfully! Welcome, ${username}!`);
+        }
+
+        // Handle user logout
+        function handleLogout() {
+            closeSettingsMenu(); // Close settings menu when logging out
+            // Clear current user session
+            localStorage.removeItem('positiveCatCurrentUser');
+            
+            // Reset state
+            state.isLoggedIn = false;
+            state.userId = null;
+            state.username = null;
+            state.history = [];
+            
+            // Clear memory page content
+            elements.historyContainer.innerHTML = '';
+            
+            // Show login page
+            showAuthPage('login');
+            
+            showNotification('Logged out successfully');
+        }
+
+        // Show authentication error
+        function showAuthError(type, message) {
+            const errorElement = type === 'login' ? elements.loginError : elements.registerError;
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+
+        // Clear authentication errors
+        function clearAuthErrors() {
+            elements.loginError.textContent = '';
+            elements.loginError.classList.add('hidden');
+            elements.registerError.textContent = '';
+            elements.registerError.classList.add('hidden');
+        }
+
+        // Generate unique user ID
+        function generateUserId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        // Simple password hashing (for demo purposes only)
+        function hashPassword(password) {
+            // In a real application, use a secure hashing algorithm like bcrypt
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return Math.abs(hash).toString(16);
+        }
+
+        // Verify password against hash
+        function verifyPassword(password, hash) {
+            return hashPassword(password) === hash;
+        }
+
+        // Navigate between pages
+        function navigateToPage(pageName) {
+            closeSettingsMenu(); // Close settings menu when navigating
+            if (state.currentPage === pageName) return;
+            
+            // Update state
+            state.currentPage = pageName;
+            
+            // Update page visibility with animation
+            if (pageName === 'today') {
+                elements.todayPage.classList.remove('inactive', 'inactive-left');
+                elements.todayPage.classList.add('active');
+                elements.memoriesPage.classList.remove('active');
+                elements.memoriesPage.classList.add('inactive');
+                
+                // Update button states
+                elements.todayBtn.classList.remove('text-secondary');
+                elements.todayBtn.classList.add('text-primary');
+                elements.memoriesBtn.classList.remove('text-primary');
+                elements.memoriesBtn.classList.add('text-secondary');
+            } else {
+                elements.memoriesPage.classList.remove('inactive', 'inactive-left');
+                elements.memoriesPage.classList.add('active');
+                elements.todayPage.classList.remove('active');
+                elements.todayPage.classList.add('inactive-left');
+                
+                // Update button states
+                elements.memoriesBtn.classList.remove('text-secondary');
+                elements.memoriesBtn.classList.add('text-primary');
+                elements.todayBtn.classList.remove('text-primary');
+                elements.todayBtn.classList.add('text-secondary');
+                
+                // Refresh history when navigating to memories
+                displayHistory();
+            }
+        }
+
+        // Add more success items
+        function addMoreSuccessItem() {
+            const itemsCount = document.querySelectorAll('.success-item').length;
+            const newIndex = itemsCount + 1;
+            
+            const div = document.createElement('div');
+            div.className = 'flex items-center';
+            
+            // For items beyond 5, add delete button
+            const deleteButton = newIndex > 5 ? `
+                <button class="delete-item-btn ml-2 text-secondary hover:text-primary transition p-1">
+                    <i class="fa fa-times"></i>
+                </button>
+            ` : '';
+            
+            div.innerHTML = `
+                <span class="w-6 h-6 rounded-full gradient-bg text-white flex items-center justify-center text-sm mr-2">${newIndex}</span>
+                <input type="text" class="success-item flex-1 px-4 py-3 rounded-xl border border-border input-focus glass-effect" placeholder="${ordinalSuffix(newIndex)} successful moment...">
+                ${deleteButton}
+            `;
+            
+            // Insert before "Add More" button
+            elements.successItemsContainer.insertBefore(div, elements.addMoreItemBtn);
+            
+            // Update button state
+            checkSuccessItemsComplete();
+        }
+
+        // Delete a success item
+        function deleteSuccessItem(itemElement) {
+            // Remove the element
+            itemElement.remove();
+            
+            // Renumber all items
+            const items = document.querySelectorAll('#successItemsContainer > div:not(#addMoreItemBtn)');
+            items.forEach((item, index) => {
+                const numberSpan = item.querySelector('span:first-child');
+                if (numberSpan) {
+                    numberSpan.textContent = index + 1;
+                }
+                
+                // For items 5 and below, remove delete button if present
+                const deleteButton = item.querySelector('.delete-item-btn');
+                if (index + 1 <= 5 && deleteButton) {
+                    deleteButton.remove();
+                } 
+                // For items 6 and above, add delete button if missing
+                else if (index + 1 > 5 && !deleteButton) {
+                    const inputElement = item.querySelector('.success-item');
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-item-btn ml-2 text-secondary hover:text-primary transition p-1';
+                    deleteBtn.innerHTML = '<i class="fa fa-times"></i>';
+                    item.appendChild(deleteBtn);
+                }
+                
+                // Update placeholder text
+                const inputElement = item.querySelector('.success-item');
+                if (inputElement) {
+                    inputElement.placeholder = `${ordinalSuffix(index + 1)} successful moment...`;
+                }
+            });
+            
+            // Update button state
+            checkSuccessItemsComplete();
+        }
+
+        // Helper function to get ordinal suffix (1st, 2nd, 3rd, etc.)
+        function ordinalSuffix(i) {
+            const j = i % 10,
+                  k = i % 100;
+            if (j === 1 && k !== 11) {
+                return i + "st";
+            }
+            if (j === 2 && k !== 12) {
+                return i + "nd";
+            }
+            if (j === 3 && k !== 13) {
+                return i + "rd";
+            }
+            return i + "th";
+        }
+
+        // Check if enough success items are completed to enable letter generation
+        function checkSuccessItemsComplete() {
+            const items = document.querySelectorAll('.success-item');
+            let completeCount = 0;
+            
+            items.forEach(item => {
+                if (item.value.trim() !== '') {
+                    completeCount++;
+                }
+            });
+            
+            // Need at least 5 items to generate letter
+            const canGenerateLetter = completeCount >= 5;
+            elements.universeLetterBtn.disabled = !canGenerateLetter;
+            
+            // Show tooltip when button is disabled
+            if (!canGenerateLetter) {
+                elements.universeLetterBtn.title = "Please fill out at least 5 success moments";
+            } else {
+                elements.universeLetterBtn.title = "";
+            }
+        }
+
+        // Show notification that automatically hides after 1.5 seconds
+        function showNotification(message = 'Saved successfully!', isError = false) {
+            const notification = elements.notification;
+            notification.textContent = message;
+            notification.classList.toggle('error', isError);
+            notification.classList.add('show');
+            
+            // Hide after 1.5 seconds (1500ms)
+            setTimeout(() => {
+                notification.classList.remove('show', 'error');
+            }, 1500);
+        }
+
+        // Clear all success items
+        function clearSuccessItems() {
+            // Clear input fields
+            const items = document.querySelectorAll('.success-item');
+            items.forEach(item => {
+                item.value = '';
+            });
+            
+            // Remove extra items beyond the first 5
+            const allItemContainers = document.querySelectorAll('#successItemsContainer > div:not(#addMoreItemBtn)');
+            allItemContainers.forEach((container, index) => {
+                if (index >= 5) {
+                    container.remove();
+                }
+            });
+            
+            // Reset state and buttons
+            state.currentLetter = null;
+            elements.universeLetterBtn.disabled = true;
+            elements.universeLetterBtn.innerHTML = '<i class="fa fa-envelope-o mr-2"></i>Get Universe Letter';
+            
+            // Hide save button and universe letter area
+            elements.saveSummaryBtn.classList.add('hidden');
+            elements.universeLetterContainer.classList.add('hidden');
+        }
+
+        // Check if we should clear today's entries (new day)
+        function checkAndClearToday() {
+            if (!state.userId) return;
+            
+            const today = getCurrentDateString();
+            
+            // Try to load today's entry if it exists
+            const existingEntry = state.history.find(item => item.date === today);
+            if (existingEntry) {
+                // Load existing entry
+                loadEntryForEditing(existingEntry);
+                return;
+            }
+            
+            // Clear form for new day
+            clearSuccessItems();
+        }
+
+        // Get current date as string (YYYY-MM-DD) using local time
+        function getCurrentDateString() {
+            const year = state.currentDate.getFullYear();
+            const month = String(state.currentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(state.currentDate.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Load an entry into the form for editing
+        function loadEntryForEditing(entry) {
+            // Clear existing items
+            const existingItems = document.querySelectorAll('#successItemsContainer > div:not(#addMoreItemBtn)');
+            existingItems.forEach((item, index) => {
+                if (index >= 5) {
+                    item.remove();
+                }
+            });
+            
+            // Fill form with record data
+            const inputFields = document.querySelectorAll('.success-item');
+            
+            // First clear all fields
+            inputFields.forEach(field => {
+                field.value = '';
+            });
+            
+            // Fill with data, adding more fields if needed
+            entry.successItems.forEach((item, index) => {
+                if (inputFields[index]) {
+                    inputFields[index].value = item;
+                } else {
+                    // Add more fields if needed
+                    addMoreSuccessItem();
+                    const newFields = document.querySelectorAll('.success-item');
+                    newFields[index].value = item;
+                }
+            });
+            
+            // Reset button states
+            elements.saveSummaryBtn.classList.add('hidden');
+            
+            // Show universe letter if exists
+            if (entry.letter) {
+                state.currentLetter = entry.letter;
+                elements.letterDate.textContent = formatDate(entry.date);
+                elements.letterContent.textContent = entry.letter;
+                elements.universeLetterContainer.classList.remove('hidden');
+                
+                // Show save button
+                elements.saveSummaryBtn.classList.remove('hidden');
+            } else {
+                elements.universeLetterContainer.classList.add('hidden');
+            }
+            
+            // Update button states
+            checkSuccessItemsComplete();
+        }
+
+        // Save summary - Clear input after saving
+        function saveSummary() {
+            if (!state.userId) return;
+            
+            const items = document.querySelectorAll('.success-item');
+            const successItems = [];
+            
+            items.forEach(item => {
+                const value = item.value.trim();
+                if (value) {
+                    successItems.push(value);
+                }
+            });
+            
+            // Check for at least 5 entries with clear message
+            if (successItems.length < 5) {
+                showNotification('Please fill out at least 5 success moments to save', true);
+                return;
+            }
+            
+            // Ensure letter has been generated
+            if (!state.currentLetter && !state.editingRecordId) {
+                showNotification('Please get the Universe Letter first', true);
+                return;
+            }
+            
+            const saveDate = state.editingRecordId || getCurrentDateString();
+            
+            // Check if record already exists
+            const existingIndex = state.history.findIndex(item => item.date === saveDate);
+            
+            if (existingIndex >= 0) {
+                // Update existing record
+                const originalLetter = state.editingRecordId ? state.history[existingIndex].letter : state.currentLetter;
+                state.history[existingIndex] = {
+                    date: saveDate,
+                    successItems: successItems,
+                    letter: originalLetter
+                };
+                showNotification('Updated successfully!');
+            } else {
+                // Add new record with the generated letter
+                state.history.push({
+                    date: saveDate,
+                    successItems: successItems,
+                    letter: state.currentLetter
+                });
+                showNotification('Saved successfully!');
+            }
+            
+            // Save to local storage
+            saveUserData();
+            
+            // Clear input regardless of edit mode
+            clearSuccessItems();
+            
+            // Reset edit state
+            state.editingRecordId = null;
+            
+            // Refresh history display if we're on memories page
+            if (state.currentPage === 'memories') {
+                displayHistory();
+            }
+        }
+
+        // Request universe letter - Show save button after generation
+        function requestUniverseLetter() {
+            const items = document.querySelectorAll('.success-item');
+            const successItems = [];
+            
+            items.forEach(item => {
+                const value = item.value.trim();
+                if (value) {
+                    successItems.push(value);
+                }
+            });
+            
+            // Check for at least 5 entries with the specific message requested
+            if (successItems.length < 5) {
+                showNotification('Please fill out at least 5 success moments to receive the universe\'s letter.', true);
+                return;
+            }
+            
+            const targetDate = state.editingRecordId || getCurrentDateString();
+            
+            // Show loading state
+            elements.universeLetterBtn.disabled = true;
+            elements.universeLetterBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>Generating...';
+            
+            // Hide save button during generation
+            elements.saveSummaryBtn.classList.add('hidden');
+            
+            // Prepare content for AI
+            const successItemsText = successItems.map((item, index) => `${index + 1}. ${item}`).join('\n');
+            
+            // Call AI API to get universe letter
+            fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer d722adabf1574e9fac5876315dbae1cd.hagLcayWj6J357Wp'
+                },
+                body: JSON.stringify({
+                    "model": "glm-4",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are the universe writing a short letter to the user in response to their daily successes. Be warm, encouraging, and loving. Make them feel seen and accepted, enhancing their self-acceptance. Keep the letter brief and kind."
+                        },
+                        {
+                            "role": "user",
+                            "content": `These are my successful moments from today:\n${successItemsText}`
+                        }
+                    ]
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.choices && data.choices.length > 0) {
+                    const letter = data.choices[0].message.content;
+                    state.currentLetter = letter; // Save letter content for later saving
+                    
+                    elements.letterDate.textContent = formatDate(targetDate);
+                    elements.letterContent.textContent = letter;
+                    elements.universeLetterContainer.classList.remove('hidden');
+                    showNotification('Universe letter generated successfully!');
+                    
+                    // Show save button after generating letter
+                    elements.saveSummaryBtn.classList.remove('hidden');
+                } else {
+                    throw new Error('No valid data received');
+                }
+                
+                // Restore button text
+                elements.universeLetterBtn.disabled = false;
+                elements.universeLetterBtn.innerHTML = '<i class="fa fa-envelope-o mr-2"></i>Get Universe Letter';
+            })
+            .catch(error => {
+                console.error('Failed to get universe letter:', error);
+                showNotification('Failed to generate letter, using default content', true);
+                
+                // Fallback content
+                const letter = `Dear friend,
+
+I'm proud of you for all you've accomplished today. Every small moment of success is a step forward, a testament to your effort and presence.
+
+Keep nurturing this positive energy, and you'll continue to see beauty in each day.
+
+Always with you,
+The Universe`;
+                
+                state.currentLetter = letter; // Save default letter content
+                elements.letterDate.textContent = formatDate(targetDate);
+                elements.letterContent.textContent = letter;
+                elements.universeLetterContainer.classList.remove('hidden');
+                
+                // Show save button after generating letter
+                elements.saveSummaryBtn.classList.remove('hidden');
+                
+                // Restore button text - fixed to ensure spinner stops
+                elements.universeLetterBtn.disabled = false;
+                elements.universeLetterBtn.innerHTML = '<i class="fa fa-envelope-o mr-2"></i>Get Universe Letter';
+            });
+        }
+
+        // Display history records with dates
+        function displayHistory() {
+            elements.historyContainer.innerHTML = '';
+            
+            // Sort by date (newest first)
+            const sortedHistory = [...state.history].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedHistory.forEach(record => {
+                const div = document.createElement('div');
+                div.className = 'p-3 bg-white rounded-xl cursor-pointer hover:bg-light transition shadow-sm';
+                
+                const hasLetter = record.letter !== null;
+                
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium">${formatDate(record.date)}</span>
+                        <span class="text-xs px-2 py-1 rounded-full ${hasLetter ? 'bg-primary/10 text-primary' : 'bg-border text-secondary'}">
+                            ${hasLetter ? 'Letter received' : 'No letter'}
+                        </span>
+                    </div>
+                    <p class="text-sm text-secondary line-clamp-2">
+                        ${record.successItems.slice(0, 2).join('; ')}${record.successItems.length > 2 ? '; etc.' : ''}
+                    </p>
+                `;
+                
+                // Click to view details in modal
+                div.addEventListener('click', () => openMemoryModal(record));
+                
+                elements.historyContainer.appendChild(div);
+            });
+            
+            // Show empty state if no history
+            if (sortedHistory.length === 0) {
+                elements.historyContainer.innerHTML = `
+                    <div class="p-6 text-center text-secondary">
+                        <i class="fa fa-calendar-o text-3xl mb-3"></i>
+                        <p>No records yet. Start tracking your successful moments today.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Open memory detail modal
+        function openMemoryModal(record) {
+            closeSettingsMenu(); // Close settings menu when opening modal
+            state.editingRecordId = record.date; // Store which record we might edit
+            elements.modalDate.textContent = formatDate(record.date);
+            
+            // Populate success items
+            elements.modalSuccessItems.innerHTML = '';
+            record.successItems.forEach((item) => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                elements.modalSuccessItems.appendChild(li);
+            });
+            
+            // Populate letter content
+            if (record.letter) {
+                elements.modalLetterContent.textContent = record.letter;
+            } else {
+                elements.modalLetterContent.textContent = 'No letter received for this day.';
+            }
+            
+            // Show modal
+            elements.memoryModal.classList.add('show');
+            
+            // Prevent body scrolling
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close memory detail modal
+        function closeMemoryModal() {
+            elements.memoryModal.classList.remove('show');
+            
+            // Allow body scrolling again
+            document.body.style.overflow = '';
+        }
+
+        // Edit memory record
+        function editMemory() {
+            // Close modal first
+            closeMemoryModal();
+            
+            // Find the record to edit
+            const record = state.history.find(item => item.date === state.editingRecordId);
+            if (!record) return;
+            
+            // Navigate to today page
+            navigateToPage('today');
+            
+            // Load the record into the form
+            loadEntryForEditing(record);
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Format date (Month Day, Year - Weekday) using local time
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Save user data to local storage
+        function saveUserData() {
+            if (!state.userId) return;
+            
+            const userData = {
+                history: state.history,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            localStorage.setItem(`positiveCatData_${state.userId}`, JSON.stringify(userData));
+        }
+
+        // Load user data from local storage
+        function loadUserData() {
+            if (!state.userId) return;
+            
+            const savedData = localStorage.getItem(`positiveCatData_${state.userId}`);
+            if (savedData) {
+                const userData = JSON.parse(savedData);
+                state.history = userData.history || [];
+            } else {
+                state.history = [];
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
