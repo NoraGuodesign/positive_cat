@@ -89,14 +89,23 @@
             
             .page.active {
                 transform: translateX(0);
+                z-index: 10;
             }
             
             .page.inactive {
                 transform: translateX(100%);
+                z-index: 5;
             }
             
             .page.inactive-left {
                 transform: translateX(-100%);
+                z-index: 5;
+            }
+            
+            /* Hidden pages - completely removed from view */
+            .page.hidden {
+                display: none;
+                z-index: 0;
             }
             
             /* Auth page styles */
@@ -199,6 +208,36 @@
                 visibility: visible;
                 transform: translateY(0);
             }
+
+            /* Mobile specific adjustments */
+            @media (max-width: 640px) {
+                .auth-container {
+                    padding: 16px;
+                    justify-content: flex-start;
+                    padding-top: 40px;
+                }
+                
+                .glass-effect {
+                    border-radius: 24px !important;
+                }
+                
+                .modal-content {
+                    border-radius: 24px;
+                    padding: 20px;
+                }
+                
+                footer {
+                    padding: 12px 16px !important;
+                }
+                
+                header {
+                    padding: 16px !important;
+                }
+                
+                .page {
+                    padding: 16px !important;
+                }
+            }
         }
     </style>
 </head>
@@ -274,7 +313,7 @@
     </div>
     
     <!-- Main application container -->
-    <div id="appContainer" class="min-h-screen flex flex-col relative page inactive">
+    <div id="appContainer" class="min-h-screen flex flex-col relative page hidden">
         <!-- Header navigation -->
         <header class="glass-effect py-4 px-6 sticky top-0 z-50 shadow-sm flex justify-between items-center">
             <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-semibold tracking-tight">
@@ -519,6 +558,9 @@
             
             // Check if user is already logged in
             checkLoginStatus();
+            
+            // Prevent touch swipe gestures on auth pages
+            preventSwipeOnAuthPages();
         }
 
         // Update date display throughout the app using local time
@@ -609,6 +651,38 @@
             }, 86400000); // Check once per day (24 * 60 * 60 * 1000 ms)
         }
 
+        // Prevent swipe gestures on authentication pages
+        function preventSwipeOnAuthPages() {
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            document.addEventListener('touchstart', (e) => {
+                // Only prevent swipes on auth pages when user is not logged in
+                if (!state.isLoggedIn) {
+                    touchStartX = e.changedTouches[0].screenX;
+                }
+            }, false);
+            
+            document.addEventListener('touchend', (e) => {
+                // Only prevent swipes on auth pages when user is not logged in
+                if (!state.isLoggedIn) {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipeGesture();
+                }
+            }, false);
+            
+            function handleSwipeGesture() {
+                const swipeThreshold = 50; // Minimum swipe distance to register as swipe
+                
+                // Prevent left/right swipes that could reveal main app
+                if (Math.abs(touchStartX - touchEndX) > swipeThreshold) {
+                    // Stop event propagation
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        }
+
         // Toggle settings menu visibility
         function toggleSettingsMenu() {
             elements.settingsContainer.classList.toggle('active');
@@ -655,11 +729,11 @@
             state.username = null;
             state.history = [];
             
+            // Hide app and show login page
+            showAuthPage('login');
+            
             // Close modal
             closeDeleteAccountModal();
-            
-            // Show login page
-            showAuthPage('login');
             
             showNotification('Your account has been deleted successfully');
         }
@@ -698,16 +772,18 @@
 
         // Show authentication page
         function showAuthPage(page = 'login') {
-            elements.appContainer.classList.remove('active');
-            elements.appContainer.classList.add('inactive');
+            // Hide main app completely
+            elements.appContainer.classList.add('hidden');
+            elements.appContainer.classList.remove('active', 'inactive', 'inactive-left');
             
+            // Show appropriate auth page
             if (page === 'register') {
-                elements.registerPage.classList.remove('inactive');
+                elements.registerPage.classList.remove('hidden', 'inactive');
                 elements.registerPage.classList.add('active');
                 elements.loginPage.classList.remove('active');
                 elements.loginPage.classList.add('inactive');
             } else {
-                elements.loginPage.classList.remove('inactive');
+                elements.loginPage.classList.remove('hidden', 'inactive');
                 elements.loginPage.classList.add('active');
                 elements.registerPage.classList.remove('active');
                 elements.registerPage.classList.add('inactive');
@@ -716,11 +792,14 @@
 
         // Show main application after login
         function showApp() {
-            elements.loginPage.classList.remove('active');
-            elements.loginPage.classList.add('inactive');
-            elements.registerPage.classList.remove('active');
-            elements.registerPage.classList.add('inactive');
-            elements.appContainer.classList.remove('inactive');
+            // Hide auth pages completely
+            elements.loginPage.classList.add('hidden');
+            elements.loginPage.classList.remove('active', 'inactive');
+            elements.registerPage.classList.add('hidden');
+            elements.registerPage.classList.remove('active', 'inactive');
+            
+            // Show main app
+            elements.appContainer.classList.remove('hidden');
             elements.appContainer.classList.add('active');
             
             // Display current user
