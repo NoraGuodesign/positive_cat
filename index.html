@@ -89,23 +89,14 @@
             
             .page.active {
                 transform: translateX(0);
-                z-index: 10;
             }
             
             .page.inactive {
                 transform: translateX(100%);
-                z-index: 5;
             }
             
             .page.inactive-left {
                 transform: translateX(-100%);
-                z-index: 5;
-            }
-            
-            /* Hidden pages - completely removed from view */
-            .page.hidden {
-                display: none;
-                z-index: 0;
             }
             
             /* Auth page styles */
@@ -194,50 +185,6 @@
             .modal-close:hover {
                 color: #000;
             }
-
-            /* Settings menu styles */
-            .settings-menu {
-                opacity: 0;
-                visibility: hidden;
-                transform: translateY(-5px);
-                transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-            }
-            
-            .settings-container.active .settings-menu {
-                opacity: 1;
-                visibility: visible;
-                transform: translateY(0);
-            }
-
-            /* Mobile specific adjustments */
-            @media (max-width: 640px) {
-                .auth-container {
-                    padding: 16px;
-                    justify-content: flex-start;
-                    padding-top: 40px;
-                }
-                
-                .glass-effect {
-                    border-radius: 24px !important;
-                }
-                
-                .modal-content {
-                    border-radius: 24px;
-                    padding: 20px;
-                }
-                
-                footer {
-                    padding: 12px 16px !important;
-                }
-                
-                header {
-                    padding: 16px !important;
-                }
-                
-                .page {
-                    padding: 16px !important;
-                }
-            }
         }
     </style>
 </head>
@@ -313,28 +260,17 @@
     </div>
     
     <!-- Main application container -->
-    <div id="appContainer" class="min-h-screen flex flex-col relative page hidden">
+    <div id="appContainer" class="min-h-screen flex flex-col relative page inactive">
         <!-- Header navigation -->
         <header class="glass-effect py-4 px-6 sticky top-0 z-50 shadow-sm flex justify-between items-center">
             <h1 class="text-[clamp(1.5rem,3vw,2rem)] font-semibold tracking-tight">
                 Positive Cat
             </h1>
             <div class="flex items-center">
-                <span id="currentDate" class="text-sm mr-3 text-secondary"></span>
                 <span id="currentUser" class="text-sm mr-3"></span>
-                <div class="relative settings-container" id="settingsContainer">
-                    <button id="settingsBtn" class="text-sm text-secondary hover:text-primary transition flex items-center">
-                        <i class="fa fa-cog mr-1"></i>
-                    </button>
-                    <div class="settings-menu absolute right-0 mt-2 w-48 glass-effect rounded-xl shadow-lg py-2 z-50">
-                        <button id="logoutBtn" class="w-full text-left px-4 py-2 text-sm hover:bg-light transition">
-                            <i class="fa fa-sign-out mr-2"></i>Logout
-                        </button>
-                        <button id="deleteAccountBtn" class="w-full text-left px-4 py-2 text-sm text-error hover:bg-light transition">
-                            <i class="fa fa-trash mr-2"></i>Delete Account
-                        </button>
-                    </div>
-                </div>
+                <button id="logoutBtn" class="text-sm text-secondary hover:text-primary transition">
+                    <i class="fa fa-sign-out mr-1"></i>Logout
+                </button>
             </div>
         </header>
         
@@ -343,10 +279,7 @@
             <!-- Page 1: Today - Successes and Universe Letter -->
             <div id="todayPage" class="page active p-6 custom-scrollbar">
                 <div class="glass-effect rounded-3xl p-6 mb-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-5">
-                        <h2 class="text-xl font-semibold tracking-tight">Today's Successes</h2>
-                        <span id="todayDisplayDate" class="text-sm text-secondary"></span>
-                    </div>
+                    <h2 class="text-xl font-semibold mb-2 tracking-tight">Daily Successes</h2>
                     <p class="text-secondary mb-5 text-sm">Record 5 small wins from today to nurture gratitude</p>
                     
                     <div id="successItemsContainer" class="space-y-3 mb-5">
@@ -422,25 +355,8 @@
         </footer>
     </div>
     
-    <!-- Confirmation Modal for Account Deletion -->
-    <div id="deleteAccountModal" class="modal-backdrop">
-        <div class="modal-content relative">
-            <button id="deleteModalCloseBtn" class="modal-close">
-                <i class="fa fa-times"></i>
-            </button>
-            <h3 class="text-lg font-semibold mb-3 text-error">Delete Account</h3>
-            <p class="text-secondary mb-5">Are you sure you want to delete your account? This action cannot be undone. All your data will be permanently removed.</p>
-            
-            <div class="flex space-x-3">
-                <button id="cancelDeleteBtn" class="flex-1 py-2 rounded-xl border border-primary text-primary font-medium btn-hover">
-                    Cancel
-                </button>
-                <button id="confirmDeleteBtn" class="flex-1 py-2 rounded-xl bg-error text-white font-medium btn-hover">
-                    Confirm Delete
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Notification component - auto hides after 1.5 seconds -->
+    <div id="notification" class="notification">Saved successfully!</div>
     
     <!-- Memory Detail Modal -->
     <div id="memoryModal" class="modal-backdrop">
@@ -469,7 +385,7 @@
     </div>
 
     <script>
-        // Global state management with date system
+        // Global state management
         const state = {
             successItems: [],
             history: [],
@@ -478,8 +394,7 @@
             userId: null, // Logged in user ID
             username: null, // Logged in username
             currentPage: 'today', // 'today' or 'memories'
-            editingRecordId: null, // Date of record being edited
-            currentDate: new Date() // Current date object using local time
+            editingRecordId: null // Date of record being edited
         };
 
         // DOM elements
@@ -499,17 +414,7 @@
             switchToRegisterBtn: document.getElementById('switchToRegisterBtn'),
             switchToLoginBtn: document.getElementById('switchToLoginBtn'),
             currentUser: document.getElementById('currentUser'),
-            currentDate: document.getElementById('currentDate'),
             logoutBtn: document.getElementById('logoutBtn'),
-            deleteAccountBtn: document.getElementById('deleteAccountBtn'),
-            settingsBtn: document.getElementById('settingsBtn'),
-            settingsContainer: document.getElementById('settingsContainer'),
-            
-            // Account deletion modal
-            deleteAccountModal: document.getElementById('deleteAccountModal'),
-            deleteModalCloseBtn: document.getElementById('deleteModalCloseBtn'),
-            cancelDeleteBtn: document.getElementById('cancelDeleteBtn'),
-            confirmDeleteBtn: document.getElementById('confirmDeleteBtn'),
             
             // App container
             appContainer: document.getElementById('appContainer'),
@@ -531,7 +436,6 @@
             universeLetterContainer: document.getElementById('universeLetterContainer'),
             letterDate: document.getElementById('letterDate'),
             letterContent: document.getElementById('letterContent'),
-            todayDisplayDate: document.getElementById('todayDisplayDate'),
             
             // Memories page elements
             historyContainer: document.getElementById('historyContainer'),
@@ -553,25 +457,8 @@
             // Bind event listeners
             bindEventListeners();
             
-            // Initialize date display with local time
-            updateDateDisplay();
-            
             // Check if user is already logged in
             checkLoginStatus();
-            
-            // Prevent touch swipe gestures on auth pages
-            preventSwipeOnAuthPages();
-        }
-
-        // Update date display throughout the app using local time
-        function updateDateDisplay() {
-            // Format for header - e.g., "Mon, Sep 18, 2023"
-            const headerFormat = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
-            elements.currentDate.textContent = state.currentDate.toLocaleDateString('en-US', headerFormat);
-            
-            // Format for today page - e.g., "Monday, September 18, 2023"
-            const todayPageFormat = { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' };
-            elements.todayDisplayDate.textContent = state.currentDate.toLocaleDateString('en-US', todayPageFormat);
         }
 
         // Bind all event listeners
@@ -582,27 +469,6 @@
             elements.switchToRegisterBtn.addEventListener('click', () => switchAuthPage('register'));
             elements.switchToLoginBtn.addEventListener('click', () => switchAuthPage('login'));
             elements.logoutBtn.addEventListener('click', handleLogout);
-            
-            // Settings menu toggle
-            elements.settingsBtn.addEventListener('click', toggleSettingsMenu);
-            
-            // Close settings menu when clicking outside
-            document.addEventListener('click', (e) => {
-                if (!elements.settingsContainer.contains(e.target)) {
-                    closeSettingsMenu();
-                }
-            });
-            
-            // Account deletion events
-            elements.deleteAccountBtn.addEventListener('click', openDeleteAccountModal);
-            elements.deleteModalCloseBtn.addEventListener('click', closeDeleteAccountModal);
-            elements.cancelDeleteBtn.addEventListener('click', closeDeleteAccountModal);
-            elements.confirmDeleteBtn.addEventListener('click', confirmAccountDeletion);
-            elements.deleteAccountModal.addEventListener('click', (e) => {
-                if (e.target === elements.deleteAccountModal) {
-                    closeDeleteAccountModal();
-                }
-            });
             
             // Page navigation
             elements.todayBtn.addEventListener('click', () => navigateToPage('today'));
@@ -639,103 +505,6 @@
                     }
                 }
             });
-            
-            // Update date display daily using local time
-            setInterval(() => {
-                const now = new Date();
-                if (now.toDateString() !== state.currentDate.toDateString()) {
-                    state.currentDate = now;
-                    updateDateDisplay();
-                    checkAndClearToday();
-                }
-            }, 86400000); // Check once per day (24 * 60 * 60 * 1000 ms)
-        }
-
-        // Prevent swipe gestures on authentication pages
-        function preventSwipeOnAuthPages() {
-            let touchStartX = 0;
-            let touchEndX = 0;
-            
-            document.addEventListener('touchstart', (e) => {
-                // Only prevent swipes on auth pages when user is not logged in
-                if (!state.isLoggedIn) {
-                    touchStartX = e.changedTouches[0].screenX;
-                }
-            }, false);
-            
-            document.addEventListener('touchend', (e) => {
-                // Only prevent swipes on auth pages when user is not logged in
-                if (!state.isLoggedIn) {
-                    touchEndX = e.changedTouches[0].screenX;
-                    handleSwipeGesture();
-                }
-            }, false);
-            
-            function handleSwipeGesture() {
-                const swipeThreshold = 50; // Minimum swipe distance to register as swipe
-                
-                // Prevent left/right swipes that could reveal main app
-                if (Math.abs(touchStartX - touchEndX) > swipeThreshold) {
-                    // Stop event propagation
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }
-        }
-
-        // Toggle settings menu visibility
-        function toggleSettingsMenu() {
-            elements.settingsContainer.classList.toggle('active');
-        }
-
-        // Close settings menu
-        function closeSettingsMenu() {
-            elements.settingsContainer.classList.remove('active');
-        }
-
-        // Open account deletion confirmation modal
-        function openDeleteAccountModal() {
-            closeSettingsMenu(); // Close settings menu when opening modal
-            elements.deleteAccountModal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-
-        // Close account deletion confirmation modal
-        function closeDeleteAccountModal() {
-            elements.deleteAccountModal.classList.remove('show');
-            document.body.style.overflow = '';
-        }
-
-        // Confirm and process account deletion
-        function confirmAccountDeletion() {
-            if (!state.userId) return;
-            
-            // Get all users from storage
-            let users = JSON.parse(localStorage.getItem('positiveCatUsers') || '[]');
-            
-            // Remove user from users list
-            users = users.filter(user => user.id !== state.userId);
-            localStorage.setItem('positiveCatUsers', JSON.stringify(users));
-            
-            // Remove user data
-            localStorage.removeItem(`positiveCatData_${state.userId}`);
-            
-            // Remove current user session
-            localStorage.removeItem('positiveCatCurrentUser');
-            
-            // Reset state
-            state.isLoggedIn = false;
-            state.userId = null;
-            state.username = null;
-            state.history = [];
-            
-            // Hide app and show login page
-            showAuthPage('login');
-            
-            // Close modal
-            closeDeleteAccountModal();
-            
-            showNotification('Your account has been deleted successfully');
         }
 
         // Check if user is logged in
@@ -772,18 +541,16 @@
 
         // Show authentication page
         function showAuthPage(page = 'login') {
-            // Hide main app completely
-            elements.appContainer.classList.add('hidden');
-            elements.appContainer.classList.remove('active', 'inactive', 'inactive-left');
+            elements.appContainer.classList.remove('active');
+            elements.appContainer.classList.add('inactive');
             
-            // Show appropriate auth page
             if (page === 'register') {
-                elements.registerPage.classList.remove('hidden', 'inactive');
+                elements.registerPage.classList.remove('inactive');
                 elements.registerPage.classList.add('active');
                 elements.loginPage.classList.remove('active');
                 elements.loginPage.classList.add('inactive');
             } else {
-                elements.loginPage.classList.remove('hidden', 'inactive');
+                elements.loginPage.classList.remove('inactive');
                 elements.loginPage.classList.add('active');
                 elements.registerPage.classList.remove('active');
                 elements.registerPage.classList.add('inactive');
@@ -792,14 +559,11 @@
 
         // Show main application after login
         function showApp() {
-            // Hide auth pages completely
-            elements.loginPage.classList.add('hidden');
-            elements.loginPage.classList.remove('active', 'inactive');
-            elements.registerPage.classList.add('hidden');
-            elements.registerPage.classList.remove('active', 'inactive');
-            
-            // Show main app
-            elements.appContainer.classList.remove('hidden');
+            elements.loginPage.classList.remove('active');
+            elements.loginPage.classList.add('inactive');
+            elements.registerPage.classList.remove('active');
+            elements.registerPage.classList.add('inactive');
+            elements.appContainer.classList.remove('inactive');
             elements.appContainer.classList.add('active');
             
             // Display current user
@@ -934,7 +698,6 @@
 
         // Handle user logout
         function handleLogout() {
-            closeSettingsMenu(); // Close settings menu when logging out
             // Clear current user session
             localStorage.removeItem('positiveCatCurrentUser');
             
@@ -992,7 +755,6 @@
 
         // Navigate between pages
         function navigateToPage(pageName) {
-            closeSettingsMenu(); // Close settings menu when navigating
             if (state.currentPage === pageName) return;
             
             // Update state
@@ -1175,76 +937,19 @@
         function checkAndClearToday() {
             if (!state.userId) return;
             
-            const today = getCurrentDateString();
+            const today = new Date().toISOString().split('T')[0];
             
-            // Try to load today's entry if it exists
-            const existingEntry = state.history.find(item => item.date === today);
-            if (existingEntry) {
-                // Load existing entry
-                loadEntryForEditing(existingEntry);
-                return;
-            }
-            
-            // Clear form for new day
-            clearSuccessItems();
-        }
-
-        // Get current date as string (YYYY-MM-DD) using local time
-        function getCurrentDateString() {
-            const year = state.currentDate.getFullYear();
-            const month = String(state.currentDate.getMonth() + 1).padStart(2, '0');
-            const day = String(state.currentDate.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Load an entry into the form for editing
-        function loadEntryForEditing(entry) {
-            // Clear existing items
-            const existingItems = document.querySelectorAll('#successItemsContainer > div:not(#addMoreItemBtn)');
-            existingItems.forEach((item, index) => {
-                if (index >= 5) {
-                    item.remove();
-                }
-            });
-            
-            // Fill form with record data
-            const inputFields = document.querySelectorAll('.success-item');
-            
-            // First clear all fields
-            inputFields.forEach(field => {
-                field.value = '';
-            });
-            
-            // Fill with data, adding more fields if needed
-            entry.successItems.forEach((item, index) => {
-                if (inputFields[index]) {
-                    inputFields[index].value = item;
-                } else {
-                    // Add more fields if needed
-                    addMoreSuccessItem();
-                    const newFields = document.querySelectorAll('.success-item');
-                    newFields[index].value = item;
-                }
-            });
-            
-            // Reset button states
-            elements.saveSummaryBtn.classList.add('hidden');
-            
-            // Show universe letter if exists
-            if (entry.letter) {
-                state.currentLetter = entry.letter;
-                elements.letterDate.textContent = formatDate(entry.date);
-                elements.letterContent.textContent = entry.letter;
-                elements.universeLetterContainer.classList.remove('hidden');
+            // Get last saved date from user data
+            const userData = JSON.parse(localStorage.getItem(`positiveCatData_${state.userId}`) || '{"history":[]}');
+            const lastSavedEntry = userData.history
+                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
                 
-                // Show save button
-                elements.saveSummaryBtn.classList.remove('hidden');
-            } else {
-                elements.universeLetterContainer.classList.add('hidden');
-            }
+            const lastSavedDate = lastSavedEntry ? lastSavedEntry.date : null;
             
-            // Update button states
-            checkSuccessItemsComplete();
+            // If last saved date exists and is different from today, clear the form
+            if (lastSavedDate && lastSavedDate !== today) {
+                clearSuccessItems();
+            }
         }
 
         // Save summary - Clear input after saving
@@ -1273,7 +978,7 @@
                 return;
             }
             
-            const saveDate = state.editingRecordId || getCurrentDateString();
+            const saveDate = state.editingRecordId || new Date().toISOString().split('T')[0];
             
             // Check if record already exists
             const existingIndex = state.history.findIndex(item => item.date === saveDate);
@@ -1305,11 +1010,6 @@
             
             // Reset edit state
             state.editingRecordId = null;
-            
-            // Refresh history display if we're on memories page
-            if (state.currentPage === 'memories') {
-                displayHistory();
-            }
         }
 
         // Request universe letter - Show save button after generation
@@ -1330,7 +1030,8 @@
                 return;
             }
             
-            const targetDate = state.editingRecordId || getCurrentDateString();
+            const today = new Date().toISOString().split('T')[0];
+            const targetDate = state.editingRecordId || today;
             
             // Show loading state
             elements.universeLetterBtn.disabled = true;
@@ -1411,13 +1112,13 @@ The Universe`;
                 // Show save button after generating letter
                 elements.saveSummaryBtn.classList.remove('hidden');
                 
-                // Restore button text - fixed to ensure spinner stops
+                // Restore button text
                 elements.universeLetterBtn.disabled = false;
                 elements.universeLetterBtn.innerHTML = '<i class="fa fa-envelope-o mr-2"></i>Get Universe Letter';
             });
         }
 
-        // Display history records with dates
+        // Display history records
         function displayHistory() {
             elements.historyContainer.innerHTML = '';
             
@@ -1461,7 +1162,6 @@ The Universe`;
 
         // Open memory detail modal
         function openMemoryModal(record) {
-            closeSettingsMenu(); // Close settings menu when opening modal
             state.editingRecordId = record.date; // Store which record we might edit
             elements.modalDate.textContent = formatDate(record.date);
             
@@ -1507,14 +1207,58 @@ The Universe`;
             // Navigate to today page
             navigateToPage('today');
             
-            // Load the record into the form
-            loadEntryForEditing(record);
+            // Clear existing items
+            const existingItems = document.querySelectorAll('#successItemsContainer > div:not(#addMoreItemBtn)');
+            existingItems.forEach((item, index) => {
+                if (index >= 5) {
+                    item.remove();
+                }
+            });
+            
+            // Fill form with record data
+            const inputFields = document.querySelectorAll('.success-item');
+            
+            // First clear all fields
+            inputFields.forEach(field => {
+                field.value = '';
+            });
+            
+            // Fill with data, adding more fields if needed
+            record.successItems.forEach((item, index) => {
+                if (inputFields[index]) {
+                    inputFields[index].value = item;
+                } else {
+                    // Add more fields if needed
+                    addMoreSuccessItem();
+                    const newFields = document.querySelectorAll('.success-item');
+                    newFields[index].value = item;
+                }
+            });
+            
+            // Reset button states to match current design
+            elements.saveSummaryBtn.classList.add('hidden');
+            
+            // Show universe letter if exists
+            if (record.letter) {
+                state.currentLetter = record.letter; // Set current letter for edit mode
+                elements.letterDate.textContent = formatDate(record.date);
+                elements.letterContent.textContent = record.letter;
+                elements.universeLetterContainer.classList.remove('hidden');
+                
+                // Show save button in edit mode
+                elements.saveSummaryBtn.classList.remove('hidden');
+            } else {
+                elements.universeLetterContainer.classList.add('hidden');
+            }
+            
+            // Update button states
+            checkSuccessItemsComplete();
             
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Format date (Month Day, Year - Weekday) using local time
+        // Format date (Month Day, Year - Weekday)
         function formatDate(dateString) {
             const date = new Date(dateString);
             const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
